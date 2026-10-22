@@ -274,19 +274,3 @@ data/tasks/<slug>/
 ## 当前边界
 
 本项目已经提供真实前后端通信、任务记录、端口分配、进程启动/停止、日志和状态上报接口。具体的 SVF、Collector、Probe、QEMU、Syzkaller 和 Seed Generator 串联逻辑仍需要由你们服务器上的 `run_workflow.py` 实现，因为这些脚本和运行环境不在本项目中。
-
-## LLM settings for the CodeQL pipeline
-
-The CodeQL workflow reads `codeql_query/llm-settings.json`. It is intentionally
-not committed. Create it from the example and provide the key through the
-environment variable named by `api.key_env`:
-
-```bash
-cp codeql_query/llm-settings.example.json codeql_query/llm-settings.json
-export DEEPSEEK_API_KEY=...
-```
-
-`api.interval_seconds` throttles requests between analysis units.
-`ops_screening.min_evidence_level` filters ops candidates before they are sent
-to the LLM (2 = lifetime-compatible, 3 = shared dispatch argument, 4 = bound
-receiver).

@@ -1,15 +1,4 @@
 data/
-docker_query/data/
-runtime/
-portable-bundle*/
 __pycache__/
 *.pyc
 *.log
-*.tar.gz
-*.tmp
-*.bak*
-*.backup*
-*.save
-codeql_query/llm-settings.json
-config/llm_settings.json
-.env

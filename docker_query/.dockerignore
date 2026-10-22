@@ -1,0 +1,11 @@
+data/
+__pycache__/
+*.pyc
+*.log
+*.tar.gz
+backup*/
+deploy-backup*/
+*.bak*
+*.backup*
+*.save
+

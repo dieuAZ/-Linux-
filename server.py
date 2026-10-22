@@ -220,6 +220,63 @@ def available_driver_catalog() -> dict[str, list[str]]:
     return catalog
 
 
+def driver_catalog_with_reasons() -> tuple[dict[str, list[str]], dict[str, list[dict]]]:
+    """Return runnable drivers and configured drivers excluded with clear reasons."""
+    raw = json.loads(STATIC_PARAMS.read_text(encoding="utf-8")) if STATIC_PARAMS.exists() else []
+    ready: dict[str, list[str]] = {}
+    unavailable: dict[str, list[dict]] = {}
+    entries = raw if isinstance(raw, list) else [raw]
+    for item in entries:
+        if not isinstance(item, dict):
+            continue
+        for linux, linux_config in item.items():
+            if not isinstance(linux_config, dict):
+                continue
+            root_value = str(linux_config.get("bitcode_root", "")).strip()
+            root = Path(root_value) if root_value else None
+            ready.setdefault(str(linux), [])
+            unavailable.setdefault(str(linux), [])
+            for driver in linux_config.get("drivers", []):
+                if not isinstance(driver, dict) or not driver.get("name"):
+                    continue
+                name = str(driver["name"])
+                reasons = []
+                if not root_value:
+                    reasons.append("未配置该 Linux 版本的 bitcode_root")
+                elif not root.is_dir():
+                    reasons.append(f"bitcode 目录不存在：{root_value}")
+                if root and driver_has_generated_bitcode(root, driver):
+                    reasons = [reason for reason in reasons if not reason.startswith("bitcode 目录不存在：")]
+                else:
+                    declared = [str(path) for key in ("bitcode_files", "driver_fix_bitcode_files")
+                                for path in (driver.get(key, []) or [])]
+                    declared_dirs = [str(path) for key in ("bitcode_dirs", "driver_fix_bitcode_dirs")
+                                     for path in (driver.get(key, []) or [])]
+                    if driver.get("analysis_status") == "source_only" or not declared and not declared_dirs:
+                        reasons.append("尚未生成 LLVM bitcode（当前只有源码记录）")
+                    else:
+                        missing = [path for path in declared if not root or not (root / path).is_file()]
+                        if missing:
+                            reasons.append("缺少 bitcode 文件：" + ", ".join(missing[:3]))
+                        elif declared_dirs:
+                            absent_dirs = [path for path in declared_dirs
+                                           if not root or not directory_has_bitcode(root / path)]
+                            if absent_dirs:
+                                reasons.append("目录中没有 .bc 文件：" + ", ".join(absent_dirs[:3]))
+                            else:
+                                reasons.append("未找到可用的 LLVM bitcode")
+                        else:
+                            reasons.append("未找到可用的 LLVM bitcode")
+                if reasons:
+                    unavailable[str(linux)].append({"name": name, "reason": "；".join(dict.fromkeys(reasons))})
+                else:
+                    ready[str(linux)].append(name)
+    for linux in ready:
+        ready[linux] = sorted(set(ready[linux]))
+        unavailable[linux].sort(key=lambda entry: entry["name"])
+    return ready, unavailable
+
+
 def codeql_kernel_root(linux: str) -> Path:
     """Resolve the physical Linux source tree used by CodeQL for a version label."""
     system = config().get("codeql_query", {})
@@ -321,7 +378,19 @@ def configured_linux_root(linux: str, fallback_template: str) -> Path:
 
 def pipeline_targets(linux: str = "", query: str = "", limit: int = 50, offset: int = 0) -> dict:
     """Return searchable one-click pipeline targets with readiness details."""
-    catalog = available_driver_catalog()
+    catalog, bitcode_unavailable = driver_catalog_with_reasons()
+    raw = json.loads(STATIC_PARAMS.read_text(encoding="utf-8")) if STATIC_PARAMS.exists() else []
+    metadata_by_version: dict[str, dict[str, dict]] = {}
+    for entry in raw if isinstance(raw, list) else [raw]:
+        if not isinstance(entry, dict):
+            continue
+        for version, linux_config in entry.items():
+            if isinstance(linux_config, dict):
+                metadata_by_version[str(version)] = {
+                    str(driver.get("name")): dict(driver)
+                    for driver in linux_config.get("drivers", [])
+                    if isinstance(driver, dict) and driver.get("name")
+                }
     with db() as conn:
         active_rows = conn.execute(
             "SELECT linux_version, driver FROM tasks "
@@ -330,34 +399,52 @@ def pipeline_targets(linux: str = "", query: str = "", limit: int = 50, offset: 
     active = {(row[0], row[1]) for row in active_rows}
     if PIPELINES:
         active.update(PIPELINES.reserved_targets())
-    configured_versions = sorted(catalog)
-    versions = [version for version in configured_versions
-                if any((version, driver) not in active for driver in catalog[version])
-                and (ROOT / "config" / "test.config").is_file()]
+    configured_versions = sorted(metadata_by_version)
+    versions = configured_versions
     selected_linux = linux if linux in versions else (versions[0] if versions else "")
     needle = query.strip().lower()
-    candidates = [driver for driver in catalog.get(selected_linux, [])
-                  if (selected_linux, driver) not in active
-                  and (not needle or needle in driver.lower())]
+    candidates = [driver for driver in metadata_by_version.get(selected_linux, {})
+                  if not needle or needle in driver.lower()]
     llm_ready = bool(llm_settings().get("has_api_key"))
     workflow_ready = PIPELINES is not None
+    fuzz_config_ready = (ROOT / "config" / "test.config").is_file()
+    bitcode_reasons = {entry["name"]: entry["reason"]
+                       for entry in bitcode_unavailable.get(selected_linux, [])}
     items = []
-    for driver in candidates[offset:offset + max(1, min(limit, 100))]:
-        bitcode_ready = True
+    for driver in candidates[offset:offset + max(1, min(limit, 1000))]:
+        metadata = metadata_by_version[selected_linux][driver]
+        bitcode_ready = driver in catalog.get(selected_linux, [])
+        device_ids = metadata.get("device_ids") or []
+        probe_configured = bool(metadata.get("probe_entry_function") or metadata.get("probe_entry_functions"))
         checks = {
             "static_analysis": bitcode_ready,
-            "probe": True,
-            "fuzz_config": (ROOT / "config" / "test.config").is_file(),
+            "probe": bool(device_ids) and probe_configured,
+            "fuzz_config": fuzz_config_ready,
             "llm": llm_ready,
             "workflow": workflow_ready,
         }
         missing = []
         if not bitcode_ready:
-            missing.append(f"静态分析 bitcode：{bitcode_root}")
+            missing.append(bitcode_reasons.get(driver, "静态分析配置未生成可用的 LLVM bitcode"))
+        if not checks["probe"]:
+            absent = []
+            if not device_ids:
+                absent.append("未配置 VID/PID")
+            if not probe_configured:
+                absent.append("未配置 probe 入口函数")
+            missing.append("驱动激活配置不完整：" + "、".join(absent))
         if not checks["fuzz_config"]:
-            missing.append("config/test.config")
+            missing.append("缺少 Syzkaller 启动模板 config/test.config")
+        if not checks["llm"]:
+            missing.append("未配置 LLM API Key")
+        if not checks["workflow"]:
+            missing.append("Syzkaller 工作流未初始化")
         running = False
-        ready = checks["fuzz_config"]
+        ready = all(checks.values())
+        if (selected_linux, driver) in active:
+            ready = False
+            running = True
+            missing.append("该驱动已有任务正在运行")
         items.append({
             "linux_version": selected_linux,
             "driver": driver,
@@ -366,8 +453,11 @@ def pipeline_targets(linux: str = "", query: str = "", limit: int = 50, offset: 
             "checks": checks,
             "missing": missing,
         })
+    items.sort(key=lambda item: (not item["ready"], item["driver"].lower()))
     return {"versions": versions, "linux_version": selected_linux, "items": items,
-            "total": len(candidates), "offset": offset, "limit": limit}
+            "total": len(candidates), "ready_total": sum(item["ready"] for item in items),
+            "unavailable_total": sum(not item["ready"] for item in items),
+            "offset": offset, "limit": limit}
 
 
 def static_target_metadata(linux: str, driver: str) -> tuple[dict, dict]:
@@ -613,7 +703,7 @@ def prepare_seed_config(task: dict) -> None:
     task_configs_dir = task_dir(task) / "snapshot" / "configs"
     task_configs_dir.mkdir(parents=True, exist_ok=True)
     host_config_path = task_configs_dir / "syzkaller.config"
-    host_template_path = (project_root / "test.config").resolve()
+    host_template_path = (ROOT / "config" / "test.config").resolve()
     if not host_template_path.is_file():
         raise ValueError(f"Seed 的 Syzkaller 模板不存在：{host_template_path}")
     host_template = json.loads(host_template_path.read_text(encoding="utf-8"))
@@ -1427,9 +1517,11 @@ class Handler(SimpleHTTPRequestHandler):
             codeql = cfg.get("codeql_query", {})
             return self.send_json({"offline": True, "manager_port_range": cfg["manager_port_range"], "fuzz_cycle": cfg.get("fuzz_cycle", {}), "workflow_configured": PIPELINES is not None, "codeql": {"path": codeql.get("codeql_path", ""), "database_root": codeql.get("database_root", ""), "configured": bool(codeql.get("codeql_path") and codeql.get("database_root"))}, "llm": llm_settings()})
         if path == "/api/catalogs/probe":
-            return self.send_json({"items": available_driver_catalog()})
+            ready, unavailable = driver_catalog_with_reasons()
+            return self.send_json({"items": ready, "unavailable": unavailable})
         if path == "/api/catalogs/static":
-            return self.send_json({"items": available_driver_catalog()})
+            ready, unavailable = driver_catalog_with_reasons()
+            return self.send_json({"items": ready, "unavailable": unavailable})
         if path == "/api/catalogs/fuzz":
             return self.send_json({"items": fuzz_catalog()})
         if path == "/api/catalogs/seed":
