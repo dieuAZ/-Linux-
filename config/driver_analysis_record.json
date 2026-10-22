@@ -3,7 +3,7 @@
   "linux_version": "linux-7.1.5",
   "scope": "仅记录源码中可确认具体 PCI VID/PID 的驱动；无具体 VID/PID 的表项不纳入本次记录。",
   "source_root": "/media/iotteam/hd/pyh/mi/linux-7.1.5",
-  "bitcode_root": "/media/iotteam/hd/pyh/mi/analyse/lvout-linux",
+  "bitcode_root": "/media/iotteam/hd/pyh/mi/analyse/lvout-7.1.5",
   "method": {
     "device_table": "struct pci_device_id plus PCI_DEVICE/PCI_DEVICE_SUB/PCI_VDEVICE macros",
     "preprocessor": "/usr/bin/clang-15 with Linux generated headers and source-local CONFIG symbols",

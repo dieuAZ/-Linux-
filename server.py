@@ -122,7 +122,7 @@ def sync_codeql_llm_settings() -> None:
         "api": {
             "url": url,
             "model": str(current.get("model") or "deepseek-v4-pro"),
-            "key": str(current.get("api_key") or ""),
+            "key": "",
             "key_env": "LLM_API_KEY",
             "timeout": 300,
             "max_tokens": 8192,
@@ -675,6 +675,7 @@ def prepare_fuzz_config(task: dict) -> None:
     pid = str(metadata.get("pid", "")).removeprefix("0x")
 
     replacements = {
+        "{{PROJECT_ROOT}}": str(project_root),
         "{{LINUX_ROOT}}": str(linux_root),
         "{{CONTAINER_LINUX_ROOT}}": container_linux_root,
         "{{CONTAINER_QEMU}}": container_qemu,
@@ -734,6 +735,9 @@ def prepare_seed_config(task: dict) -> None:
         "output_root", project_root / "ana/StateFuzz/sv-collector/result"))).resolve()
     static_root = output_root / task["linux_version"] / task["driver"]
     analysis_root = static_root
+    analysis_bitcode_root = project_root / "analyse" / f"lvout-{task['linux_version'].removeprefix('linux-')}"
+    if not analysis_bitcode_root.is_dir():
+        raise ValueError(f"Seed 的 Linux {task['linux_version']} bitcode 目录不存在：{analysis_bitcode_root}")
     corpus_root = task_dir(task) / "artifacts" / "seed"
     corpus_root.mkdir(parents=True, exist_ok=True)
     metadata = device_metadata(task["linux_version"], task["driver"])
@@ -785,6 +789,7 @@ def prepare_seed_config(task: dict) -> None:
     # The checked-in template is reusable across drivers.  Expand its public
     # task placeholders before applying the authoritative paths below.
     replacements = {
+        "{{PROJECT_ROOT}}": str(project_root),
         "{{DRIVER}}": task["driver"],
         "{{LINUX_VERSION}}": task["linux_version"],
         "{{MANAGER_PORT}}": str(task["manager_port"]),
@@ -792,6 +797,7 @@ def prepare_seed_config(task: dict) -> None:
         "{{CORPUS_ROOT}}": str(corpus_root),
         "{{STATIC_ANALYSIS_ROOT}}": str(static_root),
         "{{LINUX_ROOT}}": str(linux_root),
+        "{{ANALYSE_LINUX_ROOT}}": str(analysis_bitcode_root),
         "{{API_BASE}}": str(llm.get("api_base", "")),
         "{{MODEL}}": str(llm.get("model", "")),
         "{{SYZKALLER_CONFIG}}": str(host_config_path),
@@ -821,6 +827,7 @@ def prepare_seed_config(task: dict) -> None:
         "api_base": str(llm.get("api_base", "")),
         "model": str(llm.get("model", "")),
         "syzkaller-config": str(host_config_path),
+        "analyse_linux": str(analysis_bitcode_root),
         "addr2line_inline_path_prefix": str(linux_root / "drivers" / source_rel),
     })
     backward_query = seed_config.setdefault("backward_query", {})
@@ -1226,16 +1233,18 @@ def start_task(task_id: str, pipeline_id: str | None = None) -> dict:
             log_name = "seed.log" if task["task_type"] == "SEED" else "workflow.log"
             log_path = task_dir(task) / "logs" / log_name
             log_fp = log_path.open("ab", buffering=0)
-            kwargs = {"cwd": workdir, "stdout": log_fp, "stderr": subprocess.STDOUT}
+            child_env = os.environ.copy()
+            shared_key = str(llm_settings(include_secret=True).get("api_key") or "").strip()
+            if shared_key:
+                child_env["LLM_API_KEY"] = shared_key
+            kwargs = {"cwd": workdir, "stdout": log_fp, "stderr": subprocess.STDOUT, "env": child_env}
             if task["task_type"] == "PROBE":
                 credentials = task_dir(task) / "snapshot" / "configs" / "probe_credentials.json"
                 if credentials.is_file():
                     secret = json.loads(credentials.read_text(encoding="utf-8"))
-                    child_env = os.environ.copy()
                     api_key = str(secret.get("OPENAI_API_KEY", "")).strip()
                     if api_key:
                         child_env["OPENAI_API_KEY"] = api_key
-                    kwargs["env"] = child_env
             if os.name != "nt":
                 kwargs["start_new_session"] = True
             process = subprocess.Popen(argv, **kwargs)
@@ -1377,6 +1386,9 @@ def start_codeql_error_retry(task: dict) -> dict:
     model = str(api.get("model") or settings.get("model") or "")
     key_env = str(api.get("key_env") or "LLM_API_KEY")
     api_key = str(api.get("key") or settings.get("api_key") or os.environ.get(key_env, ""))
+    shared_key = str(llm_settings(include_secret=True).get("api_key") or "").strip()
+    if shared_key:
+        api_key = shared_key
     if not endpoint or not model or not api_key:
         raise RuntimeError("LLM 配置缺少 endpoint/model/key")
     env = os.environ.copy()
