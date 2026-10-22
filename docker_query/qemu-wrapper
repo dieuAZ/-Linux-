@@ -1,4 +1,0 @@
-#!/bin/sh
-LD_LIBRARY_PATH=/opt/qemu-libs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-export LD_LIBRARY_PATH
-exec /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64.real "$@"

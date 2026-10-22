@@ -1,5 +1,0 @@
-name: local/linux-concurrency-final
-version: 0.0.1
-dependencies:
-  codeql/cpp-all: "*"
-warnOnImplicitThis: true
