@@ -1,8 +1,8 @@
-# Syzkaller Workbench Offline
+# 崇明鸟
 
 容器内代码树及工具/共享库清单见 [代码与环境总索引](CODE-AND-ENV-INDEX.md)。
 
-完全离线的 Syzkaller Web 工作台骨架。运行时不依赖 Cloudflare、CDN、在线字体、Node.js 或任何 Python 第三方包。
+崇明鸟——完全离线的 Syzkaller Web 工作台骨架。运行时不依赖 Cloudflare、CDN、在线字体、Node.js 或任何 Python 第三方包。
 
 ## 启动
 
