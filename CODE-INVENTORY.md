@@ -16,7 +16,7 @@
 | `docker_query/` | CodeQL 查询相关部署/运行文件及挂载数据 |
 | `static/` | 页面静态资源 |
 
-应用入口为 `start.sh`（Linux）及 `server.py`。根目录 README 和 `PIPELINE.md` 记录了操作说明和各流水线阶段。
+应用入口为 `start.exe`（Linux ELF；`start.sh` 为兼容链接）及 `server.py`。根目录 README 和 `PIPELINE.md` 记录了操作说明和各流水线阶段。
 
 ## 2. `/media/iotteam/hd/pyh/mi`：主要工具链与内核代码
 

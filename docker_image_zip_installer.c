@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     }
     fprintf(stderr, "正在导入 Docker 镜像：%s\n", member);
     int result = load_image(zip_path, member, docker);
-    if (!result) fprintf(stderr, "导入完成；可执行 ./start.sh start 启动容器。\n");
+    if (!result) fprintf(stderr, "导入完成；可执行 ./start.exe start 启动容器。\n");
     free(member); free(zip_path);
     return result;
 }

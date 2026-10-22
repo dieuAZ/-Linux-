@@ -228,9 +228,9 @@ static int manage_container(bool start)
         fprintf(stderr, "Docker 无法原地修改；当前容器不会被自动停止或删除。\n");
         fprintf(stderr, "注意：未挂载到宿主机的历史分析产物不会自动进入新容器，请先迁移或备份。\n");
         fprintf(stderr, "确认数据后，可停止并将旧容器改名保留，再运行 start 创建新容器：\n");
-        fprintf(stderr, "命令：%s stop\n", "./start.sh");
+        fprintf(stderr, "命令：%s stop\n", "./start.exe");
         fprintf(stderr, "      docker rename %s %s-before-shm4g\n", container, container);
-        fprintf(stderr, "      %s start\n", "./start.sh");
+        fprintf(stderr, "      %s start\n", "./start.exe");
         return 1;
     }
     if (running) { printf("容器 %s 已在运行，/dev/shm=4G。\n", container); return 0; }
