@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
+#include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
+#include <netinet/in.h>
 #include <sched.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -8,15 +10,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #define SHM_BYTES UINT64_C(4294967296)
-#define DEFAULT_IMAGE "syzkaller-workbench:ready-kernel229-lvout715-shmfix-20261021"
+#define DEFAULT_IMAGE "ghcr.io/dieuaz/chongmingniao:20261022"
 #define DEFAULT_CONTAINER "syzkaller-workbench"
-#define DEFAULT_LX_ROOT "/media/iotteam/hd/lx"
+#define DEFAULT_APPDIR "/media/iotteam/hd/html/syzkaller-workbench-realtime-dashboard-20261013"
+
+static bool web_ready(void)
+{
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return false;
+    struct timeval timeout = {.tv_sec = 1};
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+    struct sockaddr_in address = {.sin_family = AF_INET, .sin_port = htons(8080)};
+    if (inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1 ||
+        connect(fd, (struct sockaddr *)&address, sizeof(address)) != 0) {
+        close(fd);
+        return false;
+    }
+    const char request[] = "HEAD / HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n";
+    ssize_t sent = send(fd, request, sizeof(request) - 1, MSG_NOSIGNAL);
+    char response[32] = "";
+    ssize_t received = sent > 0 ? recv(fd, response, sizeof(response) - 1, 0) : -1;
+    close(fd);
+    return received >= 12 && strncmp(response, "HTTP/1.", 7) == 0 &&
+           response[9] >= '2' && response[9] <= '3';
+}
+
+static bool wait_for_web(int seconds)
+{
+    for (int attempt = 0; attempt < seconds; ++attempt) {
+        if (web_ready()) return true;
+        sleep(1);
+    }
+    return web_ready();
+}
 
 static const char *setting(const char *name, const char *fallback)
 {
@@ -74,6 +108,7 @@ static int docker_command(char *const args[], char *output, size_t output_size,
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
+#ifndef WORKBENCH_STOP_ONLY
 static int workbench_dir(char *directory, size_t size)
 {
     ssize_t length = readlink("/proc/self/exe", directory, size - 1);
@@ -101,59 +136,58 @@ static int container_entry(void)
     perror("python3 server.py");
     return 1;
 }
+#endif
 
 static void usage(const char *program)
 {
+#ifdef WORKBENCH_STOP_ONLY
+    fprintf(stderr, "用法：%s\n", program);
+    fprintf(stderr, "停止工作台容器，不删除容器或数据。\n");
+#else
     fprintf(stderr, "用法：%s [start | stop]\n", program);
-    fprintf(stderr, "无参数运行时显示开启/关闭菜单。\n");
-    fprintf(stderr, "start：已有容器则启动；否则从本地镜像创建，/dev/shm=4G。\n");
+    fprintf(stderr, "无参数或 start：已有容器则启动并检查网页服务；否则拉取镜像并创建，/dev/shm=4G。\n");
     fprintf(stderr, "stop：停止容器，不删除容器或数据。\n");
+#endif
+}
+
+static int ensure_web_server(const char *docker, const char *container)
+{
+    if (wait_for_web(5)) {
+        printf("工作台网页已就绪：http://127.0.0.1:8080\n");
+        return 0;
+    }
+    fprintf(stderr, "网页服务未响应，尝试在容器 %s 中启动 server.py。\n", container);
+    char *exec_args[] = {(char *)docker, "exec", "-d", "--workdir", DEFAULT_APPDIR,
+                         (char *)container, "sh", "-c",
+                         "exec python3 server.py >> /tmp/workbench-server.log 2>&1", NULL};
+    if (docker_command(exec_args, NULL, 0, false) != 0) {
+        fprintf(stderr, "无法启动网页服务，请检查容器中的 %s/server.py。\n", DEFAULT_APPDIR);
+        return 1;
+    }
+    if (!wait_for_web(20)) {
+        fprintf(stderr, "网页服务仍未响应，请检查容器日志及 /tmp/workbench-server.log。\n");
+        return 1;
+    }
+    printf("工作台网页已就绪：http://127.0.0.1:8080\n");
+    return 0;
 }
 
 static int create_container(const char *docker, const char *container,
                             const char *image)
 {
-    char directory[PATH_MAX], data_dir[PATH_MAX];
-    char app_mount[PATH_MAX * 2 + 8], data_mount[PATH_MAX * 2 + 8];
-    char lx_mount[PATH_MAX * 2 + 8];
-    const char *lx_root = setting("WORKBENCH_LX_ROOT", DEFAULT_LX_ROOT);
-    const char *data_override = getenv("WORKBENCH_DATA_DIR");
-    struct stat info;
-    if (workbench_dir(directory, sizeof(directory)) != 0) {
-        fprintf(stderr, "无法确定程序所在目录\n");
-        return 1;
-    }
-    if (data_override && *data_override) {
-        if (snprintf(data_dir, sizeof(data_dir), "%s", data_override) >= (int)sizeof(data_dir)) return 1;
-    } else if (snprintf(data_dir, sizeof(data_dir), "%s/docker_query/data", directory) >= (int)sizeof(data_dir)) {
-        return 1;
-    }
-    if (data_dir[0] != '/' || lx_root[0] != '/' ||
-        stat(data_dir, &info) != 0 || !S_ISDIR(info.st_mode) ||
-        stat(lx_root, &info) != 0 || !S_ISDIR(info.st_mode)) {
-        fprintf(stderr, "数据目录或 LX 目录不存在：%s, %s\n", data_dir, lx_root);
-        return 1;
-    }
-    if (snprintf(app_mount, sizeof(app_mount), "%s:%s:rw", directory, directory) >= (int)sizeof(app_mount) ||
-        snprintf(data_mount, sizeof(data_mount), "%s:%s/data:rw", data_dir, directory) >= (int)sizeof(data_mount) ||
-        snprintf(lx_mount, sizeof(lx_mount), "%s:%s:rw", lx_root, DEFAULT_LX_ROOT) >= (int)sizeof(lx_mount)) {
-        fprintf(stderr, "挂载路径过长\n");
-        return 1;
-    }
-
     char *image_check[] = {(char *)docker, "image", "inspect", (char *)image,
                            "--format", "{{.Id}}", NULL};
     char image_id[128];
     if (docker_command(image_check, image_id, sizeof(image_id), true) != 0) {
         const char *archive = getenv("WORKBENCH_IMAGE_ARCHIVE");
-        if (!archive || access(archive, R_OK) != 0) {
-            fprintf(stderr, "本地镜像不存在：%s。可设置 WORKBENCH_IMAGE_ARCHIVE 指向 docker save 镜像包。\n", image);
-            return 1;
-        }
+        char *pull_args[] = {(char *)docker, "pull", (char *)image, NULL};
         char *load_args[] = {(char *)docker, "load", "--input", (char *)archive, NULL};
-        if (docker_command(load_args, NULL, 0, false) != 0 ||
+        int result = archive && access(archive, R_OK) == 0
+                     ? docker_command(load_args, NULL, 0, false)
+                     : docker_command(pull_args, NULL, 0, false);
+        if (result != 0 ||
             docker_command(image_check, image_id, sizeof(image_id), true) != 0) {
-            fprintf(stderr, "镜像包加载后仍找不到指定镜像：%s\n", image);
+            fprintf(stderr, "无法获取镜像：%s\n", image);
             return 1;
         }
     }
@@ -170,9 +204,6 @@ static int create_container(const char *docker, const char *container,
     ADD("--env"); ADD("HOME=/tmp/workbench-home");
     ADD("--env"); ADD("XDG_CACHE_HOME=/tmp/workbench-home/.cache");
     ADD("--env"); ADD("TMPDIR=/tmp");
-    ADD("--volume"); ADD(app_mount);
-    ADD("--volume"); ADD(data_mount);
-    ADD("--volume"); ADD(lx_mount);
     if (access("/dev/kvm", F_OK) == 0) {
         ADD("--device"); ADD("/dev/kvm:/dev/kvm");
     } else if (strcmp(setting("WORKBENCH_REQUIRE_KVM", "1"), "0") != 0) {
@@ -203,14 +234,14 @@ static int manage_container(bool start)
         return 1;
     }
     char *inspect[] = {(char *)docker, "container", "inspect", (char *)container,
-                       "--format", "{{.State.Running}} {{.HostConfig.ShmSize}}", NULL};
-    char state[128] = "";
+                       "--format", "{{.State.Running}} {{.HostConfig.ShmSize}} {{.Config.Image}}", NULL};
+    char state[768] = "";
     int inspect_result = docker_command(inspect, state, sizeof(state), true);
     bool exists = inspect_result == 0;
     bool running = false;
     unsigned long long shm = 0;
-    char running_word[6];
-    if (exists && sscanf(state, "%5s %llu", running_word, &shm) != 2) {
+    char running_word[6], existing_image[512];
+    if (exists && sscanf(state, "%5s %llu %511s", running_word, &shm, existing_image) != 3) {
         fprintf(stderr, "无法解析容器状态：%s\n", state);
         return 1;
     }
@@ -223,39 +254,35 @@ static int manage_container(bool start)
         return docker_command(stop_args, NULL, 0, false) == 0 ? 0 : 1;
     }
 
+    if (exists && strcmp(existing_image, image) != 0)
+        fprintf(stderr, "复用已有容器 %s（镜像 %s）；不会替换或清除其数据。\n",
+                container, existing_image);
     if (exists && shm != SHM_BYTES) {
-        fprintf(stderr, "现有容器 %s 的 /dev/shm 为 %llu 字节，不是 4G。\n", container, shm);
-        fprintf(stderr, "Docker 无法原地修改；当前容器不会被自动停止或删除。\n");
-        fprintf(stderr, "注意：未挂载到宿主机的历史分析产物不会自动进入新容器，请先迁移或备份。\n");
-        fprintf(stderr, "确认数据后，可停止并将旧容器改名保留，再运行 start 创建新容器：\n");
-        fprintf(stderr, "命令：%s stop\n", "./start.exe");
-        fprintf(stderr, "      docker rename %s %s-before-shm4g\n", container, container);
-        fprintf(stderr, "      %s start\n", "./start.exe");
-        return 1;
+        fprintf(stderr, "警告：已有容器 %s 的 /dev/shm 为 %llu 字节，不是 4G；不会自动替换。\n",
+                container, shm);
     }
-    if (running) { printf("容器 %s 已在运行，/dev/shm=4G。\n", container); return 0; }
-    if (!exists && create_container(docker, container, image) != 0) return 1;
-    char *start_args[] = {(char *)docker, "start", (char *)container, NULL};
-    if (docker_command(start_args, NULL, 0, false) != 0) return 1;
-    printf("工作台已启动：http://127.0.0.1:8080 （/dev/shm=4G）\n");
-    return 0;
+    if (!running) {
+        if (!exists && create_container(docker, container, image) != 0) return 1;
+        char *start_args[] = {(char *)docker, "start", (char *)container, NULL};
+        if (docker_command(start_args, NULL, 0, false) != 0) return 1;
+    } else {
+        printf("容器 %s 已在运行。\n", container);
+    }
+    return ensure_web_server(docker, container);
 }
 
 int main(int argc, char **argv)
 {
+#ifdef WORKBENCH_STOP_ONLY
+    if (argc == 1) return manage_container(false);
+    usage(argv[0]);
+    return argc == 2 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "help") == 0) ? 0 : 2;
+#else
     if (argc == 1 && access("/.dockerenv", F_OK) == 0) return container_entry();
-    if (argc == 1) {
-        char choice[16];
-        printf("1. 开启容器\n2. 关闭容器\n请选择 [1/2]：");
-        fflush(stdout);
-        if (!fgets(choice, sizeof(choice), stdin)) return 2;
-        if (strcmp(choice, "1\n") == 0 || strcmp(choice, "1") == 0) return manage_container(true);
-        if (strcmp(choice, "2\n") == 0 || strcmp(choice, "2") == 0) return manage_container(false);
-        fprintf(stderr, "无效选项。\n");
-        return 2;
-    }
+    if (argc == 1) return manage_container(true);
     if (argc == 2 && strcmp(argv[1], "start") == 0) return manage_container(true);
     if (argc == 2 && strcmp(argv[1], "stop") == 0) return manage_container(false);
     usage(argv[0]);
     return argc == 2 && (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "help") == 0) ? 0 : 2;
+#endif
 }
