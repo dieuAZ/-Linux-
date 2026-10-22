@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1.7
+ARG BASE_IMAGE=syzkaller-workbench:standalone-20261021
+FROM ${BASE_IMAGE}
+
+COPY server.py /media/iotteam/hd/html/syzkaller-workbench-realtime-dashboard-20261013/server.py
+COPY libstdc++.so.6 /opt/kamain-lib/libstdc++.so.6
+COPY libasan.so.6 /opt/workbench-runtime/libasan.so.6
+COPY qemu-libs/ /opt/qemu-libs/
+COPY gcc11/lib/ /usr/lib/gcc/x86_64-linux-gnu/11/
+COPY gcc11/include/ /usr/include/c++/11/
+COPY gcc11/include-arch/ /usr/include/x86_64-linux-gnu/c++/11/
+COPY gcc11/bin/ /usr/bin/
+COPY python-site/ /usr/local/lib/python3.10/site-packages/
+ENV LD_LIBRARY_PATH=/opt/kamain-lib:/opt/workbench-runtime:/media/iotteam/hd/pyh/mi/afl-proxy/proxy/build:/media/iotteam/hd/pyh/mi/afl-proxy/stage2/build/src
+
+RUN ln -sf /usr/bin/gcc-11 /usr/local/bin/gcc \
+    && ln -sf /usr/bin/g++-11 /usr/local/bin/g++ \
+    && ln -sf /usr/bin/gcc-11 /usr/local/bin/cc \
+    && ln -sf /usr/bin/g++-11 /usr/local/bin/c++ \
+    && ln -sf /usr/bin/cpp-11 /usr/local/bin/cpp \
+    && test "$(gcc -dumpfullversion)" = 11.4.0 \
+    && test "$(g++ -dumpfullversion)" = 11.4.0 \
+    && printf 'int main(){return 0;}\n' > /tmp/gcc11-smoke.cpp \
+    && g++ /tmp/gcc11-smoke.cpp -o /tmp/gcc11-smoke \
+    && /tmp/gcc11-smoke \
+    && python3 -c 'from openai import OpenAI; print(OpenAI.__name__)' \
+    && rm /tmp/gcc11-smoke.cpp /tmp/gcc11-smoke \
+    && mv /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64 \
+       /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64.real
+COPY --chmod=0755 qemu-wrapper /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64
+
+RUN ldd -v "$KAMAIN" > /tmp/kamain-ldd.txt 2>&1 \
+    && ! grep -q 'not found' /tmp/kamain-ldd.txt \
+    && grep -q 'libstdc++.so.6 => /opt/kamain-lib/libstdc++.so.6' /tmp/kamain-ldd.txt \
+    && grep -q 'GLIBCXX_3.4.32) => /opt/kamain-lib/libstdc++.so.6' /tmp/kamain-ldd.txt \
+    && ldd /media/iotteam/hd/pyh/mi/syzkaller/bin/syz-manager > /tmp/syz-ldd.txt 2>&1 \
+    && ! grep -q 'not found' /tmp/syz-ldd.txt \
+    && LD_LIBRARY_PATH=/opt/qemu-libs:$LD_LIBRARY_PATH \
+       ldd /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64.real > /tmp/qemu-ldd.txt 2>&1 \
+    && ! grep -q 'not found' /tmp/qemu-ldd.txt \
+    && /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64 --version \
+    && rm /tmp/kamain-ldd.txt /tmp/syz-ldd.txt /tmp/qemu-ldd.txt

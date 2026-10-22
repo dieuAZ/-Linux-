@@ -1,0 +1,112 @@
+﻿name,version,install_path,version_source
+libLLVM-14.so.1,SONAME/ABI 1,/opt/clang14/lib/libLLVM-14.so.1,SONAME only; full package release unavailable from dpkg database
+libclang-cpp.so.14,SONAME/ABI 14,/opt/clang14/lib/libclang-cpp.so.14,SONAME only; full package release unavailable from dpkg database
+libicudata.so.70,SONAME/ABI 70,/opt/clang14/lib/libicudata.so.70,SONAME only; full package release unavailable from dpkg database
+libicuuc.so.70,SONAME/ABI 70,/opt/clang14/lib/libicuuc.so.70,SONAME only; full package release unavailable from dpkg database
+libmysqlcppconn.so,not encoded in filename,/opt/clang14/lib/libmysqlcppconn.so,custom library; version metadata not encoded
+libstdc++.so.6,12.2.0-14+deb12u1,/opt/kamain-lib/libstdc++.so.6,matching installed Debian package copied into custom directory: libstdc++6
+libasan.so.6,SONAME/ABI 6,/opt/workbench-runtime/libasan.so.6,SONAME only; full package release unavailable from dpkg database
+libX11.so.6,SONAME/ABI 6,/opt/qemu-libs/libX11.so.6,SONAME only; full package release unavailable from dpkg database
+libXau.so.6,SONAME/ABI 6,/opt/qemu-libs/libXau.so.6,SONAME only; full package release unavailable from dpkg database
+libXcomposite.so.1,SONAME/ABI 1,/opt/qemu-libs/libXcomposite.so.1,SONAME only; full package release unavailable from dpkg database
+libXcursor.so.1,SONAME/ABI 1,/opt/qemu-libs/libXcursor.so.1,SONAME only; full package release unavailable from dpkg database
+libXdamage.so.1,SONAME/ABI 1,/opt/qemu-libs/libXdamage.so.1,SONAME only; full package release unavailable from dpkg database
+libXdmcp.so.6,SONAME/ABI 6,/opt/qemu-libs/libXdmcp.so.6,SONAME only; full package release unavailable from dpkg database
+libXext.so.6,SONAME/ABI 6,/opt/qemu-libs/libXext.so.6,SONAME only; full package release unavailable from dpkg database
+libXfixes.so.3,SONAME/ABI 3,/opt/qemu-libs/libXfixes.so.3,SONAME only; full package release unavailable from dpkg database
+libXi.so.6,SONAME/ABI 6,/opt/qemu-libs/libXi.so.6,SONAME only; full package release unavailable from dpkg database
+libXinerama.so.1,SONAME/ABI 1,/opt/qemu-libs/libXinerama.so.1,SONAME only; full package release unavailable from dpkg database
+libXrandr.so.2,SONAME/ABI 2,/opt/qemu-libs/libXrandr.so.2,SONAME only; full package release unavailable from dpkg database
+libXrender.so.1,SONAME/ABI 1,/opt/qemu-libs/libXrender.so.1,SONAME only; full package release unavailable from dpkg database
+libatk-1.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libatk-1.0.so.0,SONAME only; full package release unavailable from dpkg database
+libatk-bridge-2.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libatk-bridge-2.0.so.0,SONAME only; full package release unavailable from dpkg database
+libatspi.so.0,SONAME/ABI 0,/opt/qemu-libs/libatspi.so.0,SONAME only; full package release unavailable from dpkg database
+libblkid.so.1,2.38.1-5+deb12u3,/opt/qemu-libs/libblkid.so.1,matching installed Debian package copied into custom directory: libblkid1
+libbrotlicommon.so.1,1.0.9-2+b6,/opt/qemu-libs/libbrotlicommon.so.1,matching installed Debian package copied into custom directory: libbrotli1
+libbrotlidec.so.1,1.0.9-2+b6,/opt/qemu-libs/libbrotlidec.so.1,matching installed Debian package copied into custom directory: libbrotli1
+libbsd.so.0,0.11.7-2,/opt/qemu-libs/libbsd.so.0,matching installed Debian package copied into custom directory: libbsd0
+libbz2.so.1.0,1.0.8-5+b1,/opt/qemu-libs/libbz2.so.1.0,matching installed Debian package copied into custom directory: libbz2-1.0
+libcairo-gobject.so.2,SONAME/ABI 2,/opt/qemu-libs/libcairo-gobject.so.2,SONAME only; full package release unavailable from dpkg database
+libcairo.so.2,SONAME/ABI 2,/opt/qemu-libs/libcairo.so.2,SONAME only; full package release unavailable from dpkg database
+libcap.so.2,1:2.66-4+deb12u3+b1,/opt/qemu-libs/libcap.so.2,matching installed Debian package copied into custom directory: libcap2
+libcapstone.so.4,4.0.2-5,/opt/qemu-libs/libcapstone.so.4,matching installed Debian package copied into custom directory: libcapstone4
+libcom_err.so.2,1.47.0-2+b2,/opt/qemu-libs/libcom_err.so.2,matching installed Debian package copied into custom directory: libcom-err2
+libcrypto.so.3,3.0.22-1~deb12u1,/opt/qemu-libs/libcrypto.so.3,matching installed Debian package copied into custom directory: libssl3
+libcurl.so.4,7.88.1-10+deb12u15,/opt/qemu-libs/libcurl.so.4,matching installed Debian package copied into custom directory: libcurl4
+libdatrie.so.1,SONAME/ABI 1,/opt/qemu-libs/libdatrie.so.1,SONAME only; full package release unavailable from dpkg database
+libdbus-1.so.3,SONAME/ABI 3,/opt/qemu-libs/libdbus-1.so.3,SONAME only; full package release unavailable from dpkg database
+libepoxy.so.0,1.5.10-1,/opt/qemu-libs/libepoxy.so.0,matching installed Debian package copied into custom directory: libepoxy0
+libexpat.so.1,2.5.0-1+deb12u4,/opt/qemu-libs/libexpat.so.1,matching installed Debian package copied into custom directory: libexpat1
+libffi.so.8,3.4.4-1,/opt/qemu-libs/libffi.so.8,matching installed Debian package copied into custom directory: libffi8
+libfontconfig.so.1,SONAME/ABI 1,/opt/qemu-libs/libfontconfig.so.1,SONAME only; full package release unavailable from dpkg database
+libfreetype.so.6,SONAME/ABI 6,/opt/qemu-libs/libfreetype.so.6,SONAME only; full package release unavailable from dpkg database
+libfribidi.so.0,SONAME/ABI 0,/opt/qemu-libs/libfribidi.so.0,SONAME only; full package release unavailable from dpkg database
+libgcrypt.so.20,1.10.1-3+deb12u1,/opt/qemu-libs/libgcrypt.so.20,matching installed Debian package copied into custom directory: libgcrypt20
+libgdk-3.so.0,SONAME/ABI 0,/opt/qemu-libs/libgdk-3.so.0,SONAME only; full package release unavailable from dpkg database
+libgdk_pixbuf-2.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libgdk_pixbuf-2.0.so.0,SONAME only; full package release unavailable from dpkg database
+libgio-2.0.so.0,2.74.6-2+deb12u9,/opt/qemu-libs/libgio-2.0.so.0,matching installed Debian package copied into custom directory: libglib2.0-0
+libglib-2.0.so.0,2.74.6-2+deb12u9,/opt/qemu-libs/libglib-2.0.so.0,matching installed Debian package copied into custom directory: libglib2.0-0
+libgmodule-2.0.so.0,2.74.6-2+deb12u9,/opt/qemu-libs/libgmodule-2.0.so.0,matching installed Debian package copied into custom directory: libglib2.0-0
+libgmp.so.10,2:6.2.1+dfsg1-1.1,/opt/qemu-libs/libgmp.so.10,matching installed Debian package copied into custom directory: libgmp10
+libgnutls.so.30,3.7.9-2+deb12u7,/opt/qemu-libs/libgnutls.so.30,matching installed Debian package copied into custom directory: libgnutls30
+libgobject-2.0.so.0,2.74.6-2+deb12u9,/opt/qemu-libs/libgobject-2.0.so.0,matching installed Debian package copied into custom directory: libglib2.0-0
+libgpg-error.so.0,1.46-1,/opt/qemu-libs/libgpg-error.so.0,matching installed Debian package copied into custom directory: libgpg-error0
+libgraphite2.so.3,SONAME/ABI 3,/opt/qemu-libs/libgraphite2.so.3,SONAME only; full package release unavailable from dpkg database
+libgssapi_krb5.so.2,1.20.1-2+deb12u5,/opt/qemu-libs/libgssapi_krb5.so.2,matching installed Debian package copied into custom directory: libgssapi-krb5-2
+libgtk-3.so.0,SONAME/ABI 0,/opt/qemu-libs/libgtk-3.so.0,SONAME only; full package release unavailable from dpkg database
+libharfbuzz.so.0,SONAME/ABI 0,/opt/qemu-libs/libharfbuzz.so.0,SONAME only; full package release unavailable from dpkg database
+libhogweed.so.6,3.8.1-2,/opt/qemu-libs/libhogweed.so.6,matching installed Debian package copied into custom directory: libhogweed6
+libibverbs.so.1,44.0-2,/opt/qemu-libs/libibverbs.so.1,matching installed Debian package copied into custom directory: libibverbs1
+libidn2.so.0,2.3.3-1+b1,/opt/qemu-libs/libidn2.so.0,matching installed Debian package copied into custom directory: libidn2-0
+libiscsi.so.7,SONAME/ABI 7,/opt/qemu-libs/libiscsi.so.7,SONAME only; full package release unavailable from dpkg database
+libjpeg.so.8,SONAME/ABI 8,/opt/qemu-libs/libjpeg.so.8,SONAME only; full package release unavailable from dpkg database
+libk5crypto.so.3,1.20.1-2+deb12u5,/opt/qemu-libs/libk5crypto.so.3,matching installed Debian package copied into custom directory: libk5crypto3
+libkeyutils.so.1,1.6.3-2,/opt/qemu-libs/libkeyutils.so.1,matching installed Debian package copied into custom directory: libkeyutils1
+libkrb5.so.3,1.20.1-2+deb12u5,/opt/qemu-libs/libkrb5.so.3,matching installed Debian package copied into custom directory: libkrb5-3
+libkrb5support.so.0,1.20.1-2+deb12u5,/opt/qemu-libs/libkrb5support.so.0,matching installed Debian package copied into custom directory: libkrb5support0
+liblber-2.5.so.0,2.5.13+dfsg-5,/opt/qemu-libs/liblber-2.5.so.0,matching installed Debian package copied into custom directory: libldap-2.5-0
+libldap-2.5.so.0,2.5.13+dfsg-5,/opt/qemu-libs/libldap-2.5.so.0,matching installed Debian package copied into custom directory: libldap-2.5-0
+liblz4.so.1,1.9.4-1,/opt/qemu-libs/liblz4.so.1,matching installed Debian package copied into custom directory: liblz4-1
+liblzma.so.5,5.4.1-1+deb12u2,/opt/qemu-libs/liblzma.so.5,matching installed Debian package copied into custom directory: liblzma5
+libmd.so.0,1.0.4-2,/opt/qemu-libs/libmd.so.0,matching installed Debian package copied into custom directory: libmd0
+libmount.so.1,2.38.1-5+deb12u3,/opt/qemu-libs/libmount.so.1,matching installed Debian package copied into custom directory: libmount1
+libmysqlclient.so.21,SONAME/ABI 21,/opt/qemu-libs/libmysqlclient.so.21,SONAME only; full package release unavailable from dpkg database
+libmysqlcppconn.so.7,SONAME/ABI 7,/opt/qemu-libs/libmysqlcppconn.so.7,SONAME only; full package release unavailable from dpkg database
+libncursesw.so.6,6.4-4,/opt/qemu-libs/libncursesw.so.6,matching installed Debian package copied into custom directory: libncursesw6
+libnettle.so.8,3.8.1-2,/opt/qemu-libs/libnettle.so.8,matching installed Debian package copied into custom directory: libnettle8
+libnghttp2.so.14,1.52.0-1+deb12u3,/opt/qemu-libs/libnghttp2.so.14,matching installed Debian package copied into custom directory: libnghttp2-14
+libnl-3.so.200,3.7.0-0.2+b1,/opt/qemu-libs/libnl-3.so.200,matching installed Debian package copied into custom directory: libnl-3-200
+libnl-route-3.so.200,3.7.0-0.2+b1,/opt/qemu-libs/libnl-route-3.so.200,matching installed Debian package copied into custom directory: libnl-route-3-200
+libp11-kit.so.0,0.24.1-2,/opt/qemu-libs/libp11-kit.so.0,matching installed Debian package copied into custom directory: libp11-kit0
+libpango-1.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libpango-1.0.so.0,SONAME only; full package release unavailable from dpkg database
+libpangocairo-1.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libpangocairo-1.0.so.0,SONAME only; full package release unavailable from dpkg database
+libpangoft2-1.0.so.0,SONAME/ABI 0,/opt/qemu-libs/libpangoft2-1.0.so.0,SONAME only; full package release unavailable from dpkg database
+libpcre.so.3,SONAME/ABI 3,/opt/qemu-libs/libpcre.so.3,SONAME only; full package release unavailable from dpkg database
+libpcre2-8.so.0,10.42-1+deb12u2,/opt/qemu-libs/libpcre2-8.so.0,matching installed Debian package copied into custom directory: libpcre2-8-0
+libpixman-1.so.0,0.42.2-1,/opt/qemu-libs/libpixman-1.so.0,matching installed Debian package copied into custom directory: libpixman-1-0
+libpng16.so.16,1.6.39-2+deb12u6,/opt/qemu-libs/libpng16.so.16,matching installed Debian package copied into custom directory: libpng16-16
+libpsl.so.5,0.21.2-1,/opt/qemu-libs/libpsl.so.5,matching installed Debian package copied into custom directory: libpsl5
+librdmacm.so.1,44.0-2,/opt/qemu-libs/librdmacm.so.1,matching installed Debian package copied into custom directory: librdmacm1
+librtmp.so.1,2.4+20151223.gitfa8646d.1-2+b2,/opt/qemu-libs/librtmp.so.1,matching installed Debian package copied into custom directory: librtmp1
+libsasl2.so.2,2.1.28+dfsg-10,/opt/qemu-libs/libsasl2.so.2,matching installed Debian package copied into custom directory: libsasl2-2
+libselinux.so.1,3.4-1+b6,/opt/qemu-libs/libselinux.so.1,matching installed Debian package copied into custom directory: libselinux1
+libssh.so.4,SONAME/ABI 4,/opt/qemu-libs/libssh.so.4,SONAME only; full package release unavailable from dpkg database
+libssl.so.3,3.0.22-1~deb12u1,/opt/qemu-libs/libssl.so.3,matching installed Debian package copied into custom directory: libssl3
+libsystemd.so.0,252.39-1~deb12u2,/opt/qemu-libs/libsystemd.so.0,matching installed Debian package copied into custom directory: libsystemd0
+libtasn1.so.6,4.19.0-2+deb12u1,/opt/qemu-libs/libtasn1.so.6,matching installed Debian package copied into custom directory: libtasn1-6
+libthai.so.0,SONAME/ABI 0,/opt/qemu-libs/libthai.so.0,SONAME only; full package release unavailable from dpkg database
+libtinfo.so.6,6.4-4,/opt/qemu-libs/libtinfo.so.6,matching installed Debian package copied into custom directory: libtinfo6
+libudev.so.1,252.39-1~deb12u2,/opt/qemu-libs/libudev.so.1,matching installed Debian package copied into custom directory: libudev1
+libunistring.so.2,1.0-2,/opt/qemu-libs/libunistring.so.2,matching installed Debian package copied into custom directory: libunistring2
+libuuid.so.1,2.38.1-5+deb12u3,/opt/qemu-libs/libuuid.so.1,matching installed Debian package copied into custom directory: libuuid1
+libwayland-client.so.0,SONAME/ABI 0,/opt/qemu-libs/libwayland-client.so.0,SONAME only; full package release unavailable from dpkg database
+libwayland-cursor.so.0,SONAME/ABI 0,/opt/qemu-libs/libwayland-cursor.so.0,SONAME only; full package release unavailable from dpkg database
+libwayland-egl.so.1,SONAME/ABI 1,/opt/qemu-libs/libwayland-egl.so.1,SONAME only; full package release unavailable from dpkg database
+libxcb-render.so.0,SONAME/ABI 0,/opt/qemu-libs/libxcb-render.so.0,SONAME only; full package release unavailable from dpkg database
+libxcb-shm.so.0,SONAME/ABI 0,/opt/qemu-libs/libxcb-shm.so.0,SONAME only; full package release unavailable from dpkg database
+libxcb.so.1,SONAME/ABI 1,/opt/qemu-libs/libxcb.so.1,SONAME only; full package release unavailable from dpkg database
+libxkbcommon.so.0,SONAME/ABI 0,/opt/qemu-libs/libxkbcommon.so.0,SONAME only; full package release unavailable from dpkg database
+libz.so.1,1:1.2.13.dfsg-1,/opt/qemu-libs/libz.so.1,matching installed Debian package copied into custom directory: zlib1g
+libzstd.so.1,1.5.4+dfsg2-5,/opt/qemu-libs/libzstd.so.1,matching installed Debian package copied into custom directory: libzstd1
+libap.so,not encoded in filename,/media/iotteam/hd/pyh/mi/afl-proxy/proxy/build/libap.so,custom library; version metadata not encoded
+libapstage2.so,not encoded in filename,/media/iotteam/hd/pyh/mi/afl-proxy/stage2/build/src/libapstage2.so,custom library; version metadata not encoded

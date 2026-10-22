@@ -1,0 +1,118 @@
+1.建库命令
+
+CODEQL=/media/iotteam/hd/lx/codeql/codeql
+SOURCE_DIR=/绝对路径/linux源码或独立驱动目录
+DATABASE_DIR=/绝对路径/数据库输出目录
+
+"$CODEQL" database create "$DATABASE_DIR" \
+  --language=cpp \
+  --source-root="$SOURCE_DIR" \
+  --threads=0 \
+  --command="make -C \"$SOURCE_DIR\" -j$(nproc)"
+
+
+如果输入的是内核源码中的单个驱动文件夹，而不是可独立编译的工程，还必须额外提供 Linux 内核根目录，命令
+CODEQL=/media/iotteam/hd/lx/codeql/codeql
+KERNEL_ROOT=/绝对路径/linux内核源码根目录
+DRIVER_DIR=/绝对路径/linux内核驱动目录
+DATABASE_DIR=/绝对路径/数据库输出目录
+
+"$CODEQL" database create "$DATABASE_DIR" \
+  --language=cpp \
+  --source-root="$KERNEL_ROOT" \
+  --threads=0 \
+  --command="make -C \"$KERNEL_ROOT\" M=\"$DRIVER_DIR\" -j$(nproc) modules"
+
+
+2.查询命令
+
+CODEQL=/media/iotteam/hd/lx/codeql/codeql
+KERNEL_ROOT=/绝对路径/linux内核源码根目录
+DRIVER_DIR=/绝对路径/linux内核驱动目录
+DATABASE_DIR=/绝对路径/数据库输出目录
+
+QUERY_ROOT=/绝对路径/查询的文件位置
+QUERY_OUTPUT_DIR=/绝对路径/查询结果文件夹
+
+mkdir -p "$QUERY_OUTPUT_DIR/bqrs"
+mkdir -p "$QUERY_OUTPUT_DIR/csv"
+
+QUERY_FILES=(
+  "$QUERY_ROOT/IRQ/concurrent_irq_free_use_fast_recall_v2_detail.ql"
+  "$QUERY_ROOT/hrtimer/HrtimerConcurrentFreeFinal.ql"
+  "$QUERY_ROOT/kthread/KthreadConcurrentUafFinal.ql"
+  "$QUERY_ROOT/NAPI/NapiConcurrentFreeFinal.ql"
+  "$QUERY_ROOT/RCU/RcuConcurrentFreeFinal.ql"
+  "$QUERY_ROOT/tasklet/TaskletConcurrentFreeFinal.ql"
+  "$QUERY_ROOT/workqueue/WorkqueueConcurrentFinalDetail.ql"
+  "$QUERY_ROOT/timer/TimerConcurrentFreeFinal.ql"
+)
+
+for QUERY_FILE in "${QUERY_FILES[@]}"; do
+  QUERY_NAME=$(basename "$QUERY_FILE" .ql)
+
+  "$CODEQL" query run \
+    --database="$DATABASE_DIR" \
+    --threads=0 \
+    --output="$QUERY_OUTPUT_DIR/bqrs/${QUERY_NAME}.bqrs" \
+    "$QUERY_FILE"
+
+  "$CODEQL" bqrs decode \
+    --format=csv \
+    --output="$QUERY_OUTPUT_DIR/csv/${QUERY_NAME}.csv" \
+    "$QUERY_OUTPUT_DIR/bqrs/${QUERY_NAME}.bqrs"
+done
+
+
+
+3,python融合处理
+QUERY_ROOT=/绝对路径/python所在文件夹
+QUERY_OUTPUT_DIR=/绝对路径/查询结果文件夹
+
+python "$QUERY_ROOT/merge_concurrency_csv.py" \
+  "$QUERY_OUTPUT_DIR/csv" \
+  -o "$QUERY_OUTPUT_DIR/merged_semantic_unique.csv"
+
+
+4.Web 后端统一入口
+
+网页后端生成 JSON 配置文件，例如：
+
+{
+  "task_id": "任务ID",
+  "codeql_path": "/media/iotteam/hd/lx/codeql/codeql",
+  "kernel_root": "/绝对路径/linux内核源码根目录",
+  "driver_dir": "/绝对路径/linux内核驱动目录",
+  "query_root": "/绝对路径/static-query",
+  "database_dir": "/绝对路径/数据库输出目录",
+  "output_dir": "/绝对路径/本次任务输出目录",
+  "reuse_database": false,
+  "overwrite_database": false,
+  "threads": 0,
+  "ram_mb": 16000,
+  "build_threads": 16,
+  "queries": [
+    "irq", "hrtimer", "kthread", "napi",
+    "rcu", "tasklet", "timer", "workqueue"
+  ]
+}
+
+调用：
+
+python "$QUERY_ROOT/run_static_query.py" --config /绝对路径/static_query.json
+
+或者使用网页任务目录约定：
+
+python "$QUERY_ROOT/run_static_query.py" \
+  --task-id "任务ID" \
+  --task-dir /绝对路径/任务目录
+
+任务目录模式固定读取：
+
+任务目录/snapshot/configs/static_query.json
+
+网页轮询 output_dir/status.json；读取 output_dir/artifacts.json 获取各查询产物；
+最终合并结果为 output_dir/merged_semantic_unique.csv。
+
+progress、counts 和 artifacts 的查询名称统一为：
+irq、hrtimer、kthread、napi、rcu、tasklet、timer、workqueue。

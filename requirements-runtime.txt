@@ -1,0 +1,6 @@
+# Optional OpenAI SDK for scripts that call OpenAI-compatible APIs.
+# The offline web dashboard itself uses only the Python standard library.
+openai==2.53.0
+certifi>=2017.4.17
+distro>=1.7.0,<2
+idna>=2.8

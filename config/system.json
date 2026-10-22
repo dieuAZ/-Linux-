@@ -1,0 +1,74 @@
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "manager_port_range": {
+    "start": 56741,
+    "end": 56799
+  },
+  "fuzz_cycle": {
+    "enabled": true,
+    "max_duration_minutes": 180,
+    "convergence_window_minutes": 30,
+    "min_new_coverage_pcs": 10,
+    "preserve_workdir": true
+  },
+  "backend": {
+    "root": "/media/iotteam/hd/pyh/mi",
+    "probe_root": "/media/iotteam/hd/pyh/mi/probe",
+    "default_probe_mode": "static",
+    "probe_defaults": {
+      "project_root": "/media/iotteam/hd/pyh/mi",
+      "linux_path_template": "/media/iotteam/hd/pyh/mi/{linux_version}",
+      "api_base": "https://api.deepseek.com",
+      "model": "deepseek-v4-pro",
+      "guest_ssh_key": "/media/iotteam/hd/pyh/mi/image/bullseye.id_rsa"
+    },
+    "probe_runner": [
+      "python3",
+      "/media/iotteam/hd/pyh/mi/llm_probe/start_llm.py",
+      "{probe_mode}",
+      "{probe_config}"
+    ]
+  },
+  "static_analysis": {
+    "params_file": "/media/iotteam/hd/html/syzkaller-workbench-realtime-dashboard-20261013/config/static_analysis_params.json",
+    "linux_source_root_template": "/media/iotteam/hd/pyh/mi/{linux_version}",
+    "output_root": "/media/iotteam/hd/pyh/mi/ana/StateFuzz/sv-collector/result",
+    "tools": {
+      "bitcode_merger": "/media/iotteam/hd/html/syzkaller-workbench-realtime-dashboard-20261013/merge_bitcode.py",
+      "collector": "/media/iotteam/hd/pyh/mi/ana/StateFuzz/sv-collector/run.sh",
+      "backward_analyzer": "/media/iotteam/hd/pyh/mi/scripts/analyse/backward_analyzer.py",
+      "svf_root": "/media/iotteam/hd/pyh/mi/tools/SVF",
+      "svf_build": "/media/iotteam/hd/pyh/mi/tools/SVF/Release-build",
+      "svf_analyzer": "/media/iotteam/hd/pyh/mi/scripts/analyse/svf_backend/build/svf_backward_analyzer",
+      "wpa": "/media/iotteam/hd/pyh/mi/tools/SVF/Release-build/bin/wpa",
+      "extract_functions": "/media/iotteam/hd/pyh/mi/scripts/driver_fix/extract_functions.py",
+      "generate_mmio_arrays": "/media/iotteam/hd/pyh/mi/scripts/driver_fix/generate_mmio_arrays.py",
+      "svf_find_sv_alias": "/media/iotteam/hd/pyh/mi/scripts/driver_fix/svf_find_sv_alias.py"
+    },
+    "environment": {
+      "KAMAIN": "/media/iotteam/hd/pyh/mi/ana/StateFuzz/sv-collector/build/lib/KAMain",
+      "GENERATE_PAIR_DENY": "1",
+      "PYTHONUNBUFFERED": "1",
+      "LLVM_LINK": "/usr/bin/llvm-link-15",
+      "SVF_ROOT": "/media/iotteam/hd/pyh/mi/tools/SVF",
+      "SVF_BUILD": "/media/iotteam/hd/pyh/mi/tools/SVF/Release-build",
+      "PATH_PREFIX": "/usr/lib/llvm-15/bin"
+    }
+  },
+  "codeql_query": {
+    "codeql_path": "/media/iotteam/hd/lx/codeql/codeql",
+    "database_root": "/media/iotteam/hd/lx/codeql-db",
+    "kernel_root_by_version": {
+      "linux-7.2.6": "/media/iotteam/hd/lx/linux-7.2.6"
+    },
+    "kernel_root_template": "/media/iotteam/hd/pyh/mi/{linux_version}",
+    "threads": 0,
+    "ram_mb": 16000,
+    "build_threads": 16,
+    "arch": "x86_64",
+    "install_query_pack": false,
+    "prepare_commands": []
+  },
+  "pipeline": {"max_parallel": 2}
+}

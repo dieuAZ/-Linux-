@@ -1,0 +1,15 @@
+{
+  "api": {
+    "url": "https://api.deepseek.com/chat/completions",
+    "model": "deepseek-flash",
+    "key": "",
+    "key_env": "DEEPSEEK_API_KEY",
+    "timeout": 300,
+    "max_tokens": 8192,
+    "json_mode": true,
+    "interval_seconds": 3
+  },
+  "ops_screening": {
+    "min_evidence_level": 3
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "verdict": "vulnerability | safe | need_manual",
+  "confidence": "0.0 到 1.0 的数字",
+  "severity": "critical | high | medium | low | informational | unknown",
+  "same_runtime_object": "proven | likely | uncertain | unlikely | disproven",
+  "concurrent_execution_possible": "yes | likely | uncertain | unlikely | no",
+  "quiesce_before_free": "effective | likely_effective | absent | likely_absent | uncertain",
+  "use_after_free_reachable": "yes | likely | uncertain | unlikely | no",
+  "summary": "简短的技术结论",
+  "related_cve_ids": [
+    "有源码或输入证据支持的 CVE-YYYY-NNNN 编号；没有则为空数组"
+  ],
+  "reason_codes": [
+    "大写下划线形式的原因代码"
+  ],
+  "evidence": [
+    {
+      "file": "Linux 源码相对路径",
+      "line": 0,
+      "role": "registration | callback | free | use | sync",
+      "explanation": "该证据为什么影响结论"
+    }
+  ],
+  "missing_context": [
+    "得出更强结论仍缺少的事实"
+  ],
+  "manual_checks": [
+    "具体的人工复核事项"
+  ],
+  "affected_incident_ids": [
+    "该结论覆盖的 semantic_id"
+  ]
+}

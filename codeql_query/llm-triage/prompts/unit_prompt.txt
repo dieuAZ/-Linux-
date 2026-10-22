@@ -1,0 +1,14 @@
+Concurrency mechanism checklist:
+{model_checklist}
+
+Static query facts:
+The `barrier_context`, `protection_tag`, and related fields below are query clues, not final conclusions.
+{static_facts}
+
+Source excerpts:
+Lines beginning with `>>` identify locations reported by CSV. The input may contain a complete source file, a complete function, or code trimmed because of context limits. The `EXTRACTION` field describes how the excerpt was obtained.
+{source_excerpts}
+
+Return the conclusion using exactly the JSON fields below. `affected_incident_ids` may contain only semantic IDs actually covered by the conclusion.
+If the CSV evidence or source contains a known CVE associated with this issue, put the specific number in `related_cve_ids`. If there is no explicit evidence, return `[]`; do not guess.
+{output_contract}

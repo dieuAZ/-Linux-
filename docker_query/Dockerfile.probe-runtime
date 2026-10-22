@@ -1,0 +1,10 @@
+FROM syzkaller-workbench:portable-20261021
+
+COPY repair-probe-runtime.py /tmp/repair-probe-runtime.py
+RUN python3 /tmp/repair-probe-runtime.py \
+    && rm /tmp/repair-probe-runtime.py \
+    && printf '%s\n' /opt/qemu-libs > /etc/ld.so.conf.d/workbench-qemu-libs.conf \
+    && ldconfig \
+    && ! ldd /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64.real | grep -q 'not found' \
+    && /media/iotteam/hd/pyh/mi/docker/fuzz6/runtime/qemu/qemu-system-x86_64 --version \
+    && /usr/local/bin/python3 -c 'from openai import OpenAI'
