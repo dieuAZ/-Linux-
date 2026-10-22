@@ -6,12 +6,17 @@
 
 ## 启动
 
-Linux：
+Linux 宿主机（`start.sh` 为已编译的可执行文件）：
 
 ```bash
-chmod +x start.sh
-./start.sh
+./start.sh          # 显示开启/关闭菜单
+./start.sh start    # 启动已有容器；不存在则从本地镜像创建
+./start.sh stop     # 停止容器，不删除容器和数据
 ```
+
+新建容器使用 4G `/dev/shm`。若当前已有的同名容器不是 4G，程序会拒绝直接启动，并提示迁移方法；不会自动停止、删除或覆盖旧容器。迁移前必须核对容器内未挂载到宿主机的历史分析产物，直接从镜像重建不会自动带入这些产物。默认容器名为 `syzkaller-workbench`，默认镜像为 `syzkaller-workbench:ready-kernel229-lvout715-shmfix-20261021`，可分别通过 `WORKBENCH_CONTAINER_NAME`、`WORKBENCH_IMAGE` 覆盖。若镜像尚未导入，可设置 `WORKBENCH_IMAGE_ARCHIVE` 指向 `docker save` 生成的镜像包。
+
+需要重新编译可执行文件时：`gcc -std=c11 -O2 -Wall -Wextra -Werror -static -o start.sh workbench_launcher.c`。
 
 Windows 本地预览：
 
@@ -274,20 +279,3 @@ data/tasks/<slug>/
 ## 当前边界
 
 本项目已经提供真实前后端通信、任务记录、端口分配、进程启动/停止、日志和状态上报接口。具体的 SVF、Collector、Probe、QEMU、Syzkaller 和 Seed Generator 串联逻辑仍需要由你们服务器上的 `run_workflow.py` 实现，因为这些脚本和运行环境不在本项目中。
-
-## LLM configuration
-
-`codeql_query/llm-settings.json` is intentionally not committed. Create it from
-the example before running the CodeQL workflow:
-
-```bash
-cp codeql_query/llm-settings.example.json codeql_query/llm-settings.json
-export DEEPSEEK_API_KEY=sk-...
-```
-
-The scripts read the key from the environment variable named by `api.key_env`
-(default `DEEPSEEK_API_KEY`), so `api.key` can stay empty and no secret needs to
-be written to disk or committed. `api.interval_seconds` throttles requests
-between analysis units, and `ops_screening.min_evidence_level` filters ops
-candidates (2 = lifetime-compatible path, 3 = shared dispatch argument, 4 =
-receiver bound to the ops table).

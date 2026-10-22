@@ -97,7 +97,47 @@ def save_llm_settings(payload: dict) -> dict:
         LLM_SETTINGS.chmod(0o600)
     except OSError:
         pass
+    sync_codeql_llm_settings()
     return {"api_base": api_base, "model": model, "has_api_key": True}
+
+
+def sync_codeql_llm_settings() -> None:
+    """Derive codeql_query/llm-settings.json from the system LLM configuration."""
+    current = llm_settings(include_secret=True)
+    api_base = str(current.get("api_base") or "").rstrip("/")
+    if not api_base:
+        return
+    url = api_base if api_base.endswith("/chat/completions") else api_base + "/chat/completions"
+    path = CODEQL_PACKAGE / "llm-settings.json"
+    existing: dict = {}
+    if path.is_file():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                existing = loaded
+        except (OSError, json.JSONDecodeError):
+            existing = {}
+    screening = existing.get("ops_screening") if isinstance(existing.get("ops_screening"), dict) else {}
+    settings = {
+        "api": {
+            "url": url,
+            "model": str(current.get("model") or "deepseek-v4-pro"),
+            "key": str(current.get("api_key") or ""),
+            "key_env": "LLM_API_KEY",
+            "timeout": 300,
+            "max_tokens": 8192,
+            "json_mode": True,
+            "interval_seconds": 3,
+        },
+        "ops_screening": {
+            "min_evidence_level": int(screening.get("min_evidence_level", 4)),
+        },
+    }
+    path.write_text(json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
 
 
 class ClosingConnection(sqlite3.Connection):
@@ -1673,6 +1713,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_storage()
+    sync_codeql_llm_settings()
     cfg = config()
     address = (cfg.get("host", "127.0.0.1"), int(cfg.get("port", 8080)))
     print(f"Syzkaller Workbench offline: http://{address[0]}:{address[1]}")

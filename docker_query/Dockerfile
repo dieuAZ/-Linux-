@@ -49,10 +49,10 @@ RUN patchelf --set-rpath /opt/kamain-lib "$KAMAIN" \
     && ! grep -q 'not found' /tmp/kamain-ldd.txt \
     && grep -q 'libstdc++.so.6 => /opt/kamain-lib/libstdc++.so.6' /tmp/kamain-ldd.txt \
     && rm /tmp/kamain-ldd.txt \
-    && chmod +x start.sh \
+    && chmod +x container_entry.sh \
     /media/iotteam/hd/pyh/mi/ana/StateFuzz/sv-collector/run.sh \
     /media/iotteam/hd/pyh/mi/syzkaller/bin/syz-manager \
     && python3 -m compileall -q .
 
 EXPOSE 8080
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["./container_entry.sh"]
